@@ -50,6 +50,7 @@ fichiers de `output/` (`scoring.json`, `previsions.json`, `spots.json`, `scenes.
 .venv/bin/python -m sandbanks gouf --rendu-seul   # figures Gouf depuis le npz (le calcul complet prend ~4 min)
 ./serve.sh                                    # sert output/ sur :8765 (dual-stack --bind ::)
 ios/build_sim.sh                              # sync données + xcodegen + build + lance sur iPhone 17 Pro
+ios/build_iphone.sh                           # idem sur le vrai iPhone branché (build hors iCloud)
 .venv/bin/python tools/shot_iphone.py "index.html?spot=la_nord"   # capture du viewer web → captures/
 SIMCTL_CHILD_ONGLET=2 SIMCTL_CHILD_SPOT=la_nord xcrun simctl launch <udid> fr.ulysse.BancsSurf
 xcrun simctl io <udid> screenshot captures/xxx.png

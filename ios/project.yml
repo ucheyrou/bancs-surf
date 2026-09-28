@@ -22,7 +22,7 @@ targets:
         SWIFT_VERSION: "5.9"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         INFOPLIST_KEY_UIUserInterfaceStyle: Dark
-        DEVELOPMENT_TEAM: ""
+        DEVELOPMENT_TEAM: 69XP7TUBY7
         CODE_SIGN_STYLE: Automatic
     info:
       path: BancsSurf/Info.plist

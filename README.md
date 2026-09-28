@@ -19,6 +19,7 @@ bathymétrie EMODnet.
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 ./update.sh                 # premier calcul (quelques minutes), crée output/
 ios/build_sim.sh            # app iOS dans le simulateur (Xcode + xcodegen)
+ios/build_iphone.sh         # app iOS sur l'iPhone branché (à relancer tous les 7 jours)
 ```
 
 Cartographie des bancs de sable entre Seignosse et Capbreton à partir des images
@@ -312,8 +313,11 @@ SwiftUI + MapKit + Swift Charts, iOS 17+. Elle consomme les JSON du pipeline (`s
   et la semaine à venir en taille au déferlement colorée par la note.
 - Projet généré par XcodeGen (`ios/project.yml`) : `cd ios && xcodegen generate`.
 - **Simulateur** : `ios/build_sim.sh` (compile, installe, lance ; démarre le serveur local).
-- **Sur ton iPhone** : ouvrir `ios/BancsSurf.xcodeproj` dans Xcode, cible BancsSurf → *Signing &
-  Capabilities* → choisir ton équipe (Apple ID perso gratuit suffit), brancher l'iPhone, ▶︎.
+- **Sur ton iPhone** : `ios/build_iphone.sh` (iPhone branché et déverrouillé) compile, signe,
+  installe et lance. Prérequis, une seule fois : compte Apple ajouté dans Xcode (Réglages → Comptes),
+  Mode développeur activé sur l'iPhone, et au premier lancement Réglages → Général → VPN et gestion
+  de l'appareil → faire confiance. L'équipe (Personal Team) est fixée dans `ios/project.yml`.
+  Avec un compte gratuit, l'app expire au bout de 7 jours : relancer le script.
   Elle se met à jour toute seule depuis l'hébergement à chaque ouverture ; sans réseau elle
   utilise le cache / les données embarquées à la compilation.
 - Captures automatisées : `SIMCTL_CHILD_ONGLET=2 xcrun simctl launch <udid> fr.ulysse.BancsSurf`
