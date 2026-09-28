@@ -250,14 +250,15 @@ SwiftUI + MapKit + Swift Charts, iOS 17+. Elle consomme les JSON du pipeline (`s
 `serve.sh`, `http://127.0.0.1:8765` dans le simulateur) → cache disque → copie embarquée (`ios/Data`, synchronisée par `update.sh`), donc elle fonctionne hors ligne.
 
 - Onglets : **Carte**, **Où aller** (classement par jour → fiche), **La Nord**, **Prévisions**
-  (toute la zone, houle et vent d'abord, façon YaduSurf : une ligne « maintenant », puis le
-  **tableau qu'on fait glisser** pour avancer dans la semaine — les jours se suivent, toutes les 3 h
-  de 6h à 21h, légende fixe à gauche, trait entre les jours, heure actuelle surlignée, début du jour
-  suivant visible au bord. Lignes : houle en barres (échelle de la semaine) et hauteur, période,
-  direction, **vent en nœuds** dans une case colorée par sa qualité (vert offshore → rouge onshore),
-  rafales, marée ↗/↘, note du meilleur spot, PM/BM avec coefficient ; en-tête de jour avec 0–3
-  étoiles (proportionnelles à la note du meilleur spot). Toucher un jour ouvre son détail : moments
-  matin → soir et heure par heure),
+  (toute la zone, façon YaduSurf : une ligne « maintenant », puis le **surfomètre** — un jour par
+  colonne, qu'on fait glisser. Chaque jour : 0–3 étoiles (note du meilleur spot), le vent à 9h, 12h,
+  15h et 18h en **cases colorées** par sa qualité (vert offshore → rouge onshore, en nœuds), la houle
+  de 7h à 21h en aplat sur l'échelle de la semaine (plus sombre = période plus longue, bulle période
+  + direction), une bande de couleur = note du meilleur spot heure par heure, puis **trois phrases**
+  (`Phrases` dans `Models.swift`) : verdict + meilleur spot et créneau (« Y'a bon ! », facteur
+  limitant sous 7), houle (« Houle longue de 1.2 à 1.5 m (14 s), en hausse. »), vent (« Vent offshore
+  jusqu'à 12h, puis onshore faible. », faible = sous `onshore_tue_kmh`), et les PM/BM du jour.
+  Toucher un jour ouvre son détail : moments matin → soir et heure par heure),
   **Webcams / Spots / Scènes** (segmenté), et ⚙︎ Réglages
   (adresse du serveur, mise à jour).
 - **Carte** : satellite Apple. Mode *Notes* = marqueurs colorés par note ; en bas, le jour, les

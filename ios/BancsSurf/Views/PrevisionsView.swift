@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Prévisions de toute la zone, esprit YaduSurf : une ligne « maintenant », puis le tableau qu'on fait
-/// glisser pour avancer dans le temps (toutes les 3 h). Toucher un jour ouvre son détail.
+/// Prévisions de toute la zone, esprit YaduSurf : une ligne « maintenant », puis le surfomètre (un jour
+/// par colonne, qu'on fait glisser). Toucher un jour ouvre son détail.
 struct PrevisionsView: View {
     @EnvironmentObject var store: DataStore
     @State private var detail: Date?
@@ -14,9 +14,8 @@ struct PrevisionsView: View {
                         Text(store.statut.isEmpty ? "Chargement…" : store.statut).foregroundStyle(Color.sourdine).padding()
                     } else {
                         maintenant
-                        FrisePrevisions(ouvrirJour: { detail = $0 })
-                            .padding(.horizontal)
-                        Text("Glisse vers la gauche pour avancer dans la semaine · touche un jour pour son détail")
+                        Surfometre(ouvrirJour: { detail = $0 })
+                        Text("Glisse pour voir la semaine · touche un jour pour le détail heure par heure")
                             .font(.caption2).foregroundStyle(Color.sourdine).padding(.horizontal).padding(.top, 4)
                         Text("Houle au large (avant le Gouf) : Open-Meteo Marine. Vent en nœuds : Météo-France via Open-Meteo. Marée au zéro hydro de Capbreton.")
                             .font(.caption2).foregroundStyle(Color.sourdine).padding()

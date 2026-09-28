@@ -334,3 +334,67 @@ enum QualiteVent {
         return .onshore
     }
 }
+
+/// Le jour en trois phrases, façon YaduSurf : on retient l'essentiel sans lire un seul chiffre de tableau.
+/// Seuils de verdict alignés sur `Color.note` (vert ≥ 7, jaune ≥ 4) ; le facteur limitant vient du pipeline.
+enum Phrases {
+    static func verdict(_ c: Classement?) -> String {
+        guard let c else { return "Pas de note" }
+        let mot = c.score >= 8.5 ? "Y'a bon !" : c.score >= 7 ? "Bonnes conditions" : c.score >= 4 ? "Surfable" : "Pas terrible"
+        // Sous 7, on dit pourquoi (« période courte »…), comme partout ailleurs dans l'app
+        guard c.score < 7, let e = c.explication, !e.hasPrefix("conditions dans") else { return mot }
+        return "\(mot) : \(e)"
+    }
+
+    /// « Houle longue de 1.2 à 1.5 m, en hausse. » sur les heures surfables (7h–20h).
+    static func houle(_ pts: [Instant]) -> String {
+        let hs = pts.compactMap(\.H)
+        guard let hMin = hs.min(), let hMax = hs.max() else { return "Houle inconnue." }
+        let ts = pts.compactMap(\.T).sorted()
+        let t = ts.isEmpty ? nil : ts[ts.count / 2]
+        let qualif = t.map { $0 >= 13 ? " longue" : $0 < 9 ? " courte" : "" } ?? ""
+        // Espaces insécables : « 1.5 m » et « 11 s » ne se coupent pas en fin de ligne
+        let taille = hMax - hMin < 0.25 ? "de \(Fmt.n((hMin + hMax) / 2))\u{00A0}m" : "de \(Fmt.n(hMin)) à \(Fmt.n(hMax))\u{00A0}m"
+        // Tendance : moyenne des 3 premières heures contre les 3 dernières
+        let debut = hs.prefix(3).reduce(0, +) / Double(min(3, hs.count))
+        let fin = hs.suffix(3).reduce(0, +) / Double(min(3, hs.count))
+        let tendance = fin - debut > 0.2 ? ", en hausse" : debut - fin > 0.2 ? ", en baisse" : ""
+        return "Houle\(qualif) \(taille)\(t.map { " (\(Fmt.n($0, 0))\u{00A0}s)" } ?? "")\(tendance)."
+    }
+
+    /// « Vent offshore jusqu'à 12h, puis onshore. 4 à 15 nœuds. » : le moment où il tourne, c'est ce qui compte.
+    static func vent(_ pts: [Instant]) -> String {
+        let q = pts.map(\.qualiteVent)
+        guard !q.isEmpty else { return "Vent inconnu." }
+        // Trois familles : bon (offshore, side-off, nul), side-shore, onshore
+        func famille(_ q: QualiteVent) -> Int { switch q { case .onshore: 2; case .side: 1; default: 0 } }
+        var runs: [(debut: Int, fin: Int)] = []
+        for i in q.indices {
+            if let r = runs.last, famille(q[r.debut]) == famille(q[i]) { runs[runs.count - 1].fin = i } else { runs.append((i, i)) }
+        }
+        // Une bascule d'une heure n'est pas un changement : on la rend au segment précédent
+        var lisses: [(debut: Int, fin: Int)] = []
+        for r in runs {
+            if let l = lisses.last, r.fin == r.debut || famille(q[l.debut]) == famille(q[r.debut]) {
+                lisses[lisses.count - 1].fin = r.fin
+            } else { lisses.append(r) }
+        }
+        func libelle(_ r: (debut: Int, fin: Int)) -> String {
+            let seg = q[r.debut...r.fin]
+            let dominant = [QualiteVent.offshore, .sideOff, .glassy, .side, .onshore].max { a, b in seg.filter { $0 == a }.count < seg.filter { $0 == b }.count }!
+            // « faible » sous 20 km/h (11 nœuds) : le seuil où l'onshore tue la vague (zone.yaml, onshore_tue_kmh)
+            let faible = dominant != .glassy && (pts[r.debut...r.fin].compactMap(\.vent).max() ?? 0) < 20
+            return dominant == .glassy ? "quasi nul" : dominant.libelle + (faible ? " faible" : "")
+        }
+        func heure(_ i: Int) -> String { Fmt.heure(pts[i].date) }
+        let phrase: String
+        switch lisses.count {
+        case 1: phrase = "Vent \(libelle(lisses[0])) toute la journée"
+        case 2: phrase = "Vent \(libelle(lisses[0])) jusqu'à \(heure(lisses[1].debut)), puis \(libelle(lisses[1]))"
+        default: phrase = "Vent \(libelle(lisses[0])), puis " + lisses.dropFirst().prefix(2).map { "\(libelle($0)) dès \(heure($0.debut))" }.joined(separator: ", ")
+        }
+        let v = pts.compactMap(\.vent)
+        guard let vMin = v.min(), let vMax = v.max() else { return phrase + "." }
+        return "\(phrase). \(Fmt.nd(vMin)) à \(Fmt.nd(vMax))\u{00A0}nœuds."
+    }
+}
