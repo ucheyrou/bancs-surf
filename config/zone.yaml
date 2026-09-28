@@ -1,0 +1,87 @@
+# Zone d'étude et spots — côte landaise, Vieux-Boucau -> Capbreton
+# Coordonnées approximatives (WGS84) : à affiner sur le terrain.
+
+aoi:
+  # lon_min, lat_min, lon_max, lat_max — bande côtière étroite
+  bbox: [-1.48, 43.62, -1.39, 43.80]
+  crs_travail: "EPSG:32630"     # UTM 30N, grille native Sentinel-2 -> aucun rééchantillonnage
+  tuile: "MGRS-30TXP"
+
+stac:
+  url: "https://earth-search.aws.element84.com/v1"
+  collection: "sentinel-2-l2a"
+  nuages_tuile_max: 70          # filtre grossier (tuile 100 km) ; le filtre fin est local
+
+detection:
+  # Réflectance moyenne visible (B02+B03+B04)/3 au-dessus de laquelle un pixel mer est de l'écume
+  seuil_ecume: 0.12
+  # Ratio SWIR(B11)/visible : écume < 0.5 (les bulles absorbent le SWIR), nuage/sable > 0.5
+  ratio_swir_ecume: 0.5
+  ratio_swir_nuage: 0.5
+  dilatation_nuage_px: 3
+  # Un pixel appartient à la zone de surf s'il est mouillé (NDWI > 0) dans >= 10 % des scènes
+  frac_mouille_min: 0.10
+  # Une scène sans écume (mer d'huile) n'apprend rien sur les bancs : fraction min de la zone
+  ecume_min_fraction: 0.005
+  # Fraction nuageuse locale max pour garder une scène
+  nuages_local_max: 0.25
+  # Distance max au large prise en compte (m) — au-delà il n'y a pas de banc surfable
+  largeur_mer_m: 1200
+  # Une scène « casse au large » (spots avec banc_externe_m) si >= 10 % des lignes de la vignette
+  # ont de l'écume au-delà de banc_externe_m. Séparation observée à La Nord (8 scènes, 08–09/2026) :
+  # 16 % et 26 % les jours où le large cassait, <= 6 % les autres.
+  banc_externe_lignes_min: 0.10
+
+composite:
+  fenetre_jours: 60             # scènes prises en compte
+  demi_vie_jours: 20            # poids d'une scène divisé par 2 tous les N jours
+
+rendu:
+  demi_cote_spot_m: 700         # crop par spot : carré de 1.4 km
+
+# --- Vent : la côte fait face à 281° (axe à 11,5° du nord). Offshore = provenance ~101° (E).
+vent:
+  offshore_deg: 101          # provenance idéale (E / ENE)
+  ideal_kmh: [5, 25]         # tient la lèvre sans gêner le take-off
+  fort_offshore_kmh: 35      # au-dessus : spray, take-off difficile
+  onshore_tue_kmh: 20        # onshore au-dessus de ça : quasi insurfable
+
+# --- Houle : provenance au large (avant Gouf)
+houle:
+  direction_ideale: [265, 300]   # W à WNW
+  direction_ok: [250, 320]       # au-delà : N ou SW, pénalisé
+
+scoring:
+  kr_plancher: 0.4           # la théorie des rayons exagère les ombres du Gouf
+  gamma_deferlement: 0.78    # H_b = gamma * h_b
+
+# --- Spots (nord -> sud). taille = [trop petit, opt bas, opt haut, ferme] en m au déferlement.
+# maree = fenêtre [bas, haut] en position de cycle (0 = BM, 1 = PM). pente_banc = pente typique
+# du banc (pour Iribarren). protection = abri des digues (1 = aucun). type = texte.
+spots:
+  - {id: casernes,     nom: "Les Casernes",                lat: 43.720, lon: -1.435,
+     taille: [0.7, 1.2, 2.6, 3.2], maree: [0.1, 0.6], pente_banc: 0.07, protection: 1.0, type: beachbreak creux}
+  - {id: penon,        nom: "Le Penon",                    lat: 43.708, lon: -1.437,
+     taille: [0.4, 0.8, 1.8, 2.5], maree: [0.3, 0.9], pente_banc: 0.04, protection: 1.0, type: beachbreak facile}
+  - {id: bourdaines,   nom: "Les Bourdaines",              lat: 43.700, lon: -1.438,
+     taille: [0.6, 1.2, 2.5, 3.0], maree: [0.3, 0.7], pente_banc: 0.055, protection: 1.0, type: beachbreak}
+  - {id: estagnots,    nom: "Les Estagnots",               lat: 43.692, lon: -1.440,
+     taille: [0.6, 1.2, 2.6, 3.2], maree: [0.3, 0.8], pente_banc: 0.06, protection: 1.0, type: beachbreak}
+  - {id: culs_nus,     nom: "Les Culs Nus",                lat: 43.681, lon: -1.442,
+     taille: [0.7, 1.3, 2.8, 3.5], maree: [0.1, 0.6], pente_banc: 0.07, protection: 1.0, type: beachbreak puissant}
+  - {id: graviere,     nom: "La Gravière",                 lat: 43.672, lon: -1.443,
+     taille: [0.8, 1.5, 2.8, 3.5], maree: [0.1, 0.6], pente_banc: 0.09, protection: 1.0, type: shorebreak}
+  - {id: la_nord,      nom: "La Nord",                     lat: 43.667, lon: -1.444,
+     taille: [1.5, 2.5, 5.0, 7.0], maree: [0.4, 1.0], pente_banc: 0.056, protection: 1.0, type: banc externe,
+     # début du banc du large : creux de fréquence à 150–200 m du bord, banc à 210–470 m (profil S2)
+     banc_externe_m: 200}
+  - {id: la_sud,       nom: "La Sud (plage centrale)",     lat: 43.660, lon: -1.446,
+     taille: [0.4, 0.8, 1.8, 2.5], maree: [0.3, 0.9], pente_banc: 0.04, protection: 0.9, type: beachbreak abrité}
+  - {id: prevent,      nom: "Le Prévent",                  lat: 43.652, lon: -1.447,
+     taille: [0.5, 1.0, 2.0, 3.0], maree: [0.4, 1.0], pente_banc: 0.035, protection: 0.7, type: abrité par la digue}
+  - {id: santocha,     nom: "Le Santocha",                 lat: 43.645, lon: -1.449,
+     taille: [0.5, 1.0, 2.2, 3.0], maree: [0.3, 0.8], pente_banc: 0.045, protection: 1.0, type: beachbreak}
+  - {id: la_piste,     nom: "La Piste / VVF",              lat: 43.640, lon: -1.450,
+     taille: [0.7, 1.2, 2.5, 3.2], maree: [0.0, 0.5], pente_banc: 0.08, protection: 1.0, type: shorebreak}
+  - {id: savane,       nom: "La Savane",                   lat: 43.634, lon: -1.452,
+     taille: [0.6, 1.2, 2.5, 3.0], maree: [0.2, 0.7], pente_banc: 0.05, protection: 1.0, type: beachbreak}

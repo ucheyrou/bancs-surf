@@ -1,0 +1,12 @@
+# Pipeline sandbanks (Python 3.12)
+numpy==2.5.3
+scipy==1.18.1
+rasterio==1.5.1
+pyproj==3.8.0
+shapely==2.1.2
+pystac-client==0.9.0
+matplotlib==3.11.2
+requests==2.34.2
+PyYAML==6.0.3
+# tools/shot_iphone.py uniquement
+websocket-client==1.9.2

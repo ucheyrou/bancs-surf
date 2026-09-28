@@ -1,0 +1,25 @@
+# Environnement et cache (hors iCloud, voir CLAUDE.md)
+.venv
+venv.nosync/
+cache
+cache.nosync/
+*.nosync/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Fichiers générés par le pipeline (./update.sh les recrée)
+/output/
+ios/Data/
+
+# iOS : projet généré par XcodeGen (ios/project.yml) et build
+ios/*.xcodeproj/
+ios/build/
+xcuserdata/
+
+# Captures de travail (les captures du README sont dans docs/captures/)
+/captures/
+
+# Doublons de synchro iCloud (« fichier 2 »)
+* 2
+* 2.*
