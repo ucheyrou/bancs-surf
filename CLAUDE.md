@@ -55,6 +55,19 @@ Python 3.12 dans `.venv` (lien vers `venv.nosync/`) : numpy, scipy, rasterio, py
 pystac-client, matplotlib, requests, pyyaml. L'app iOS cible iOS 17+, est générée par
 XcodeGen (`ios/project.yml`) et n'a aucune dépendance externe.
 
+## Git et GitHub
+
+Le dépôt **public** est https://github.com/ucheyrou/bancs-surf, sur la branche `main`.
+- Un commit correspond à un changement cohérent, avec un message en français. On pousse
+  quand c'est vérifié (voir « Vérifier avant de dire fini »).
+- L'e-mail de commit est l'adresse noreply GitHub (config locale du dépôt), jamais l'e-mail
+  personnel ou de l'école.
+- Les fichiers générés (`output/`, `ios/Data/`, `ios/*.xcodeproj`), le venv, le cache et
+  `captures/` sont ignorés. Une capture destinée au README va, redimensionnée, dans
+  `docs/captures/`.
+- Le dépôt est public : aucune clé, aucun token, aucune donnée perso. Pas de gros fichiers :
+  le cache Sentinel reste hors git.
+
 ## État (23/09/2026)
 
 Déjà livré : le pipeline satellite, les prévisions, le modèle du Gouf, la notation, le viewer
