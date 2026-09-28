@@ -10,6 +10,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import re
+import time
 import requests
 
 from .config import RACINE, CACHE
@@ -30,10 +31,20 @@ VARS_MARINE = ["wave_height", "wave_period", "wave_direction",
 VARS_VENT = ["wind_speed_10m", "wind_direction_10m", "wind_gusts_10m"]
 
 
-def _get(url, params, timeout=30):
-    r = requests.get(url, params=params, timeout=timeout)
-    r.raise_for_status()
-    return r.json()
+def _get(url, params, timeout=30, attentes_s=(5, 20)):
+    """GET JSON, retenté après une panne passagère (délai dépassé, 429, 5xx) : Open-Meteo
+    Marine ne répond parfois pas en 30 s depuis GitHub Actions (28/09/2026)."""
+    for attente in (*attentes_s, None):
+        try:
+            r = requests.get(url, params=params, timeout=timeout)
+            if r.status_code != 429 and r.status_code < 500:
+                r.raise_for_status()
+                return r.json()
+            r.raise_for_status()
+        except (requests.ConnectionError, requests.Timeout, requests.HTTPError):
+            if attente is None:
+                raise
+            time.sleep(attente)
 
 
 def horaires(debut: dt.date, fin: dt.date) -> dict:

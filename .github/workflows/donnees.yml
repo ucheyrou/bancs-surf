@@ -40,7 +40,7 @@ jobs:
       # donc un seul envoi du cache par jour ; les passages suivants le restaurent.
       - id: jour
         run: echo "jour=$(date -u +%F)" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: cache/scenes
           key: scenes-${{ steps.jour.outputs.jour }}
@@ -49,14 +49,19 @@ jobs:
       - name: Pipeline (scènes, composite, prévisions, notes, viewer)
         run: python -m sandbanks update
 
+      # une panne Open-Meteo ne fait pas planter le pipeline, mais on ne publie pas un site
+      # sans prévisions : le job échoue et la version précédente reste en ligne
+      - name: Prévisions présentes ?
+        run: test -s output/previsions.json && test -s output/scoring.json
+
       - name: Figures et table du Gouf (depuis data/gouf_Kr.npz)
         run: |
           python -m sandbanks gouf --rendu-seul
           # l'app iOS le lit à la racine, comme dans ios/Data
           cp output/gouf/gouf_spots.json output/
 
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: output
       - id: deploiement
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
