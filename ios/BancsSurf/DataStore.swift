@@ -2,10 +2,13 @@ import Foundation
 import SwiftUI
 import UIKit
 
-/// Charge les données : serveur (Mac ou hébergement) → cache disque → copie embarquée dans le bundle.
+/// Charge les données : serveur (hébergement GitHub Pages, ou le Mac) → cache disque → copie embarquée dans le bundle.
 @MainActor
 final class DataStore: ObservableObject {
-    @AppStorage("baseURL") var baseURL: String = "http://127.0.0.1:8765"
+    /// Recalculées chaque heure par .github/workflows/donnees.yml.
+    static let urlHebergee = "https://ucheyrou.github.io/bancs-surf"
+    /// Vide = hébergement ; sinon l'adresse d'un Mac qui exécute ./serve.sh.
+    @AppStorage("baseURL") var baseURL: String = ""
     @Published var scoring: Scoring? { didSet { dates = scoring?.time.map(Fmt.date) ?? [] } }
     @Published var previsions: Previsions? { didSet { instants = Self.calculerInstants(previsions) } }
     @Published var spots: [SpotInfo] = []
@@ -29,7 +32,8 @@ final class DataStore: ObservableObject {
     }
 
     func url(_ chemin: String) -> URL? {
-        URL(string: baseURL.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "/" + chemin)
+        let base = baseURL.trimmingCharacters(in: .whitespaces).isEmpty ? Self.urlHebergee : baseURL
+        return URL(string: base.trimmingCharacters(in: CharacterSet(charactersIn: "/ ")) + "/" + chemin)
     }
 
     /// Données brutes d'un fichier : réseau si demandé, sinon cache, sinon bundle.

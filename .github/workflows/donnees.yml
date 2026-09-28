@@ -1,0 +1,62 @@
+# Recalcule les données chaque heure (scènes Sentinel-2, prévisions Open-Meteo, notes) et les
+# publie sur GitHub Pages : l'app iOS et la PWA les rechargent à chaque ouverture, sans le Mac.
+name: Données
+
+on:
+  schedule:
+    - cron: "17 * * * *"   # toutes les heures (minute 17 : moins de file d'attente qu'à :00)
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["sandbanks/**", "config/**", "data/**", "requirements.txt", ".github/workflows/donnees.yml"]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  donnees:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      # Scènes Sentinel-2 déjà lues (~11 Mo chacune, ~23 s à télécharger) : une clé par jour,
+      # donc un seul envoi du cache par jour ; les passages suivants le restaurent.
+      - id: jour
+        run: echo "jour=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: cache/scenes
+          key: scenes-${{ steps.jour.outputs.jour }}
+          restore-keys: scenes-
+
+      - name: Pipeline (scènes, composite, prévisions, notes, viewer)
+        run: python -m sandbanks update
+
+      - name: Figures et table du Gouf (depuis data/gouf_Kr.npz)
+        run: |
+          python -m sandbanks gouf --rendu-seul
+          # l'app iOS le lit à la racine, comme dans ios/Data
+          cp output/gouf/gouf_spots.json output/
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: output
+      - id: deploiement
+        uses: actions/deploy-pages@v4

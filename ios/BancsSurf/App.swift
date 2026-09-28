@@ -3,12 +3,17 @@ import SwiftUI
 @main
 struct BancsSurfApp: App {
     @StateObject private var store = DataStore()
+    @Environment(\.scenePhase) private var phase
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(store)
                 .preferredColorScheme(.dark)
                 .task { await store.charger() }
+                // à chaque retour au premier plan : les notes sont recalculées chaque heure en ligne
+                .onChange(of: phase) { _, p in
+                    if p == .active, !store.enCours { Task { await store.charger() } }
+                }
         }
     }
 }

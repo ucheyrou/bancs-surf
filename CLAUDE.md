@@ -34,6 +34,10 @@ config/zone.yaml ──► sandbanks/ (pipeline Python) ──► output/  ─�
 | `sandbanks/cli.py` | commandes `scenes`, `update`, `score`, `gouf` |
 | `ios/BancsSurf/` | `DataStore` (serveur → cache → bundle), `Models` (Codable), `Views/` (un fichier par écran) |
 
+**Hébergement** : `.github/workflows/donnees.yml` relance `update` + `gouf --rendu-seul`
+chaque heure et publie `output/` sur https://ucheyrou.github.io/bancs-surf/ (adresse par défaut de
+l'app iOS, qui recharge à chaque retour au premier plan). Le Mac ne sert plus qu'au développement.
+
 **Contrat de données** : l'interface entre le pipeline et les deux frontends, ce sont les
 fichiers de `output/` (`scoring.json`, `previsions.json`, `spots.json`, `scenes.json`,
 `meta.json`, `gouf/gouf_spots.json` et les PNG).
@@ -73,14 +77,14 @@ Le dépôt **public** est https://github.com/ucheyrou/bancs-surf, sur la branche
 Déjà livré : le pipeline satellite, les prévisions, le modèle du Gouf, la notation, le viewer
 web (PWA) et l'app iOS native à 5 onglets (Carte, Où aller, La Nord, Prévisions, Webcams/Spots/Scènes).
 Côté carte : animation houle/vent en particules, et vue « banc + houle » pour chaque spot.
+Depuis le 28/09 : données recalculées chaque heure sur GitHub Actions et hébergées sur Pages.
 
 Pistes suivantes, par ordre de valeur :
 - **calibrer `zone.yaml` avec les retours terrain** ;
 - vérifier la position de `la_nord` (probablement ~300 m trop au sud, lat ≈ 43,670), **à
   confirmer avec Ulysse** ;
 - brancher la bouée CANDHIS Anglet pour corriger le biais de houle ;
-- normaliser les composites par la marée ;
-- héberger les données pour ne plus dépendre du Mac.
+- normaliser les composites par la marée.
 
 ## Règles pour une app propre et agréable
 

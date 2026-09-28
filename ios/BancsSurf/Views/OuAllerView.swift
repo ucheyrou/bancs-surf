@@ -69,8 +69,8 @@ struct ReglagesView: View {
     var body: some View {
         Form {
             Section("Serveur de données") {
-                TextField("http://192.168.1.10:8765", text: $store.baseURL).keyboardType(.URL).autocorrectionDisabled().textInputAutocapitalization(.never)
-                Text("Adresse du Mac qui exécute ./serve.sh (ou d'un hébergement). Dans le simulateur : http://127.0.0.1:8765").font(.caption).foregroundStyle(Color.sourdine)
+                TextField(DataStore.urlHebergee, text: $store.baseURL).keyboardType(.URL).autocorrectionDisabled().textInputAutocapitalization(.never)
+                Text("Vide = données hébergées, recalculées chaque heure. Pour tester le pipeline local : adresse du Mac qui exécute ./serve.sh (simulateur : http://127.0.0.1:8765).").font(.caption).foregroundStyle(Color.sourdine)
                 Button { Task { await store.charger() } } label: { HStack { Text("Mettre à jour maintenant"); if store.enCours { Spacer(); ProgressView() } } }
                 Text(store.statut).font(.caption).foregroundStyle(Color.sourdine)
             }

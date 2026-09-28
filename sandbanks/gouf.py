@@ -412,8 +412,11 @@ def rendre_effectif(cfg: dict, dossier=None):
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     dossier = dossier or (OUTPUT / "gouf")
+    dossier.mkdir(parents=True, exist_ok=True)
     K = charger_Kr()
     noms = {sp.id: sp.nom for sp in cfg["spots"]}
+    # le npz peut contenir des spots retirés depuis de zone.yaml : on ne rend que ceux de la config
+    abs_spots = {sid: sv for sid, sv in K["spots"].items() if sid in noms}
     s = K["s"]
 
     # Kr effectif le long de la côte, deux directions typiques
@@ -422,10 +425,10 @@ def rendre_effectif(cfg: dict, dossier=None):
         for T, col in zip([8, 12, 16, 20], ["#999", "#4a90d9", "#e67e22", "#c0392b"]):
             ax.plot(s / 1000, kr_effectif(K, T, th), color=col, lw=1.8, label=f"T = {T} s")
         ax.axhline(1, color="k", lw=0.6, ls="--")
-        for sid, sv in K["spots"].items():
+        for sid, sv in abs_spots.items():
             ax.axvline(sv / 1000, color="#ccc", lw=0.5)
             ax.text(sv / 1000, 1.95, noms[sid], rotation=90, fontsize=7, va="top", ha="center")
-        ax.set_xlim(K["spots"]["savane"] / 1000 - 1.5, K["spots"]["vieux_boucau"] / 1000 + 1.5)
+        ax.set_xlim(min(abs_spots.values()) / 1000 - 1.5, max(abs_spots.values()) / 1000 + 1.5)
         ax.set_ylim(0, 2.0); ax.set_ylabel("Kr effectif")
         ax.set_title(f"Provenance {th}° — spectre réaliste (±12° de direction, ±2 s de période)", fontsize=10)
         ax.legend(loc="lower right", fontsize=8)
@@ -454,7 +457,7 @@ def rendre_effectif(cfg: dict, dossier=None):
     appro = metriques_approche(cfg)
     table = {sid: {"approche": appro[sid],
                    "Kr_effectif": {f"T{T}_D{th}": round(kr_spot(K, sid, T, th), 3) for T in Ts for th in Ds}}
-             for sid in K["spots"]}
+             for sid in abs_spots}
     (dossier / "gouf_spots.json").write_text(json.dumps(
         {"description": "Kr_effectif = H(isobathe 10 m)/H(sans canyon), spectre ±12°/±2 s, moyenne ±300 m. "
                         "approche.isobathe_m = distance au bord des isobathes ; pente_20_10 = pente entre 20 et 10 m.",

@@ -194,10 +194,24 @@ avec le vécu terrain.
 - Le biais du modèle de houle : brancher la bouée CANDHIS Anglet pour corriger H en temps réel.
 - Le vent est pris à un point (Hossegor) ; par vent de N/S les abris locaux (digues) diffèrent.
 
+## Données hébergées (sans le Mac)
+
+Le workflow [.github/workflows/donnees.yml](.github/workflows/donnees.yml) relance
+`sandbanks update` + `gouf --rendu-seul` **chaque heure** sur GitHub Actions (scènes Sentinel-2
+gardées dans le cache Actions, ~1 min par passage) et publie `output/` sur
+**https://ucheyrou.github.io/bancs-surf/**. L'app iOS lit cette adresse par défaut et recharge à
+chaque retour au premier plan ; la PWA s'y installe directement. Les prévisions couvrent donc
+toujours J‑1 → J+7. Relance manuelle : `gh workflow run donnees.yml`. GitHub suspend les
+tâches planifiées d'un dépôt public sans commit depuis 60 jours : il suffit alors de le réactiver
+dans l'onglet Actions.
+
 ## Sur l'iPhone
 
 Le viewer est une web-app : sur téléphone il passe en onglets (Carte · Où aller · Prévisions ·
 Spots · Scènes) et s'installe sur l'écran d'accueil (plein écran, icône).
+
+Le plus simple : ouvrir https://ucheyrou.github.io/bancs-surf/ dans Safari. Pour tester le
+pipeline local avant de pousser :
 
 ```zsh
 ./serve.sh        # sert output/ sur le réseau et affiche les adresses à ouvrir dans Safari
@@ -206,8 +220,7 @@ Spots · Scènes) et s'installe sur l'écran d'accueil (plein écran, icône).
 - **Avec un câble** : sur l'iPhone, Réglages → Partage de connexion → activé, brancher l'USB ;
   le Mac obtient une interface « iPhone USB » et `serve.sh` affiche son adresse (172.20.10.x).
 - **Sans câble** : même Wi‑Fi, ouvrir l'adresse Wi‑Fi affichée (ou `http://<nom-du-mac>.local:8765/`).
-- Safari → Partager → **Sur l'écran d'accueil**. L'app se lance ensuite en plein écran ; le Mac
-  doit servir (`serve.sh`) pour qu'elle charge — tant qu'elle n'est pas hébergée en ligne.
+- Safari → Partager → **Sur l'écran d'accueil**. L'app se lance ensuite en plein écran.
 
 Carte : mode **Notes des spots** (marqueurs colorés par note à l'heure choisie, sélecteur jour /
 heure, fiche détaillée au tap : taille, type de déferlement, tube, puissance, vent, marée, Kr Gouf,
@@ -230,8 +243,8 @@ dossiers `*.nosync` → le venv vit dans `venv.nosync/` et le cache satellite da
 
 SwiftUI + MapKit + Swift Charts, iOS 17+. Elle consomme les JSON du pipeline (`scoring`, `previsions`,
 `spots`, `scenes`, `meta`) et les PNG (planches, overlays). Ordre de recherche des données : serveur
-(`Réglages → adresse`, par défaut `http://127.0.0.1:8765` = le Mac dans le simulateur) → cache disque
-→ copie embarquée (`ios/Data`, synchronisée par `update.sh`), donc elle fonctionne hors ligne.
+(`Réglages → adresse` ; vide = hébergement GitHub Pages, sinon l'adresse d'un Mac qui exécute
+`serve.sh`, `http://127.0.0.1:8765` dans le simulateur) → cache disque → copie embarquée (`ios/Data`, synchronisée par `update.sh`), donc elle fonctionne hors ligne.
 
 - Onglets : **Carte**, **Où aller** (classement par jour → fiche), **La Nord**, **Prévisions**
   (toute la zone, houle et vent d'abord, façon YaduSurf : une ligne « maintenant », puis le
@@ -297,8 +310,8 @@ SwiftUI + MapKit + Swift Charts, iOS 17+. Elle consomme les JSON du pipeline (`s
 - **Simulateur** : `ios/build_sim.sh` (compile, installe, lance ; démarre le serveur local).
 - **Sur ton iPhone** : ouvrir `ios/BancsSurf.xcodeproj` dans Xcode, cible BancsSurf → *Signing &
   Capabilities* → choisir ton équipe (Apple ID perso gratuit suffit), brancher l'iPhone, ▶︎.
-  Puis dans l'app, Réglages → adresse du Mac (`./serve.sh` l'affiche) pour les mises à jour ;
-  sans réseau elle utilise le cache / les données embarquées à la compilation.
+  Elle se met à jour toute seule depuis l'hébergement à chaque ouverture ; sans réseau elle
+  utilise le cache / les données embarquées à la compilation.
 - Captures automatisées : `SIMCTL_CHILD_ONGLET=2 xcrun simctl launch <udid> fr.ulysse.BancsSurf`
   ouvre directement l'onglet 2 (0 carte … 4 scènes).
   `SIMCTL_CHILD_ONGLET=1 SIMCTL_CHILD_SPOT=casernes SIMCTL_CHILD_DANS_H=24` ouvre la fiche des Casernes dans 24 h.
