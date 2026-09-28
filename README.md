@@ -255,8 +255,8 @@ SwiftUI + MapKit + Swift Charts, iOS 17+. Elle consomme les JSON du pipeline (`s
   15h et 18h en **cases colorées** par sa qualité (vert offshore → rouge onshore, en nœuds), la houle
   de 7h à 21h en aplat sur l'échelle de la semaine (plus sombre = période plus longue, bulle période
   + direction), une bande de couleur = note du meilleur spot heure par heure, puis **trois phrases**
-  (`Phrases` dans `Models.swift`) : verdict + meilleur spot et créneau (« Y'a bon ! », facteur
-  limitant sous 7), houle (« Houle longue de 1.2 à 1.5 m (14 s), en hausse. »), vent (« Vent offshore
+  (`Phrases` dans `Models.swift`) : verdict calé sur les étoiles (de « Pas de surf, reste au lit »
+  à « Exceptionnel, tu vas te régaler ! », facteur limitant en dessous sous 7) + meilleur spot et créneau, houle (« Houle longue de 1.2 à 1.5 m (14 s), en hausse. »), vent (« Vent offshore
   jusqu'à 12h, puis onshore faible. », faible = sous `onshore_tue_kmh`), et les PM/BM du jour.
   Toucher un jour ouvre son détail : moments matin → soir et heure par heure),
   **Webcams / Spots / Scènes** (segmenté), et ⚙︎ Réglages

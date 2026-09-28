@@ -59,6 +59,9 @@ struct ColonneJour: View {
             VStack(alignment: .leading, spacing: 5) {
                 Text(Phrases.verdict(best)).font(.subheadline.weight(.bold))
                     .foregroundStyle(best.map { Color.note($0.score) } ?? Color.sourdine)
+                if let l = Phrases.limite(best) {
+                    Text(l).font(.caption.weight(.semibold)).foregroundStyle(best.map { Color.note($0.score) } ?? Color.sourdine)
+                }
                 if let b = best {
                     Text("\(b.nom) \(b.creneau.replacingOccurrences(of: "(^|–)0", with: "$1", options: .regularExpression))")
                         .font(.caption.weight(.semibold))
@@ -185,11 +188,11 @@ struct ColonneJour: View {
     }
 }
 
-/// 0 à 3 étoiles, proportionnelles à la note /10 du meilleur spot (demi-étoiles).
+/// 0 à 3 étoiles (demi-étoiles), calculées comme le verdict : `Phrases.etoiles`.
 struct Etoiles: View {
     let note: Double?
     var body: some View {
-        let e = ((note ?? 0) / 10 * 3 * 2).rounded() / 2
+        let e = Phrases.etoiles(note)
         HStack(spacing: 1) {
             ForEach(0..<3, id: \.self) { k in
                 let v = e - Double(k)

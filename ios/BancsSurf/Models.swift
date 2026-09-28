@@ -336,14 +336,27 @@ enum QualiteVent {
 }
 
 /// Le jour en trois phrases, façon YaduSurf : on retient l'essentiel sans lire un seul chiffre de tableau.
-/// Seuils de verdict alignés sur `Color.note` (vert ≥ 7, jaune ≥ 4) ; le facteur limitant vient du pipeline.
+/// Le verdict suit les étoiles (même calcul), le facteur limitant vient du pipeline.
 enum Phrases {
+    /// 0 à 3 étoiles par demi-étoile, proportionnelles à la note /10 du meilleur spot.
+    static func etoiles(_ note: Double?) -> Double { ((note ?? 0) / 10 * 3 * 2).rounded() / 2 }
+
     static func verdict(_ c: Classement?) -> String {
         guard let c else { return "Pas de note" }
-        let mot = c.score >= 8.5 ? "Y'a bon !" : c.score >= 7 ? "Bonnes conditions" : c.score >= 4 ? "Surfable" : "Pas terrible"
-        // Sous 7, on dit pourquoi (« période courte »…), comme partout ailleurs dans l'app
-        guard c.score < 7, let e = c.explication, !e.hasPrefix("conditions dans") else { return mot }
-        return "\(mot) : \(e)"
+        switch etoiles(c.score) {
+        case 3: return "Exceptionnel, tu vas te régaler !"
+        case 2.5: return "Très bon, fonce !"
+        case 2: return "Bonnes conditions, ça vaut le coup"
+        case 1.5: return "Correct, de quoi se faire plaisir"
+        case 1: return "Petit surf, pas très propre"
+        case 0.5: return "Pas terrible, à éviter"
+        default: return "Pas de surf, reste au lit"
+        }
+    }
+    /// Sous 7, on dit pourquoi (« période courte »…), comme partout ailleurs dans l'app.
+    static func limite(_ c: Classement?) -> String? {
+        guard let c, c.score < 7, let e = c.explication, !e.hasPrefix("conditions dans") else { return nil }
+        return e.prefix(1).uppercased() + e.dropFirst()
     }
 
     /// « Houle longue de 1.2 à 1.5 m, en hausse. » sur les heures surfables (7h–20h).
