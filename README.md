@@ -227,6 +227,9 @@ heure, fiche détaillée au tap : taille, type de déferlement, tube, puissance,
 créneau du jour, planche satellite) et mode **Bancs (satellite)** (scènes date par date).
 Liens directs : `index.html?spot=la_nord`, `index.html?tab=s-ouller`.
 
+Icône (vague qui tube) : un seul dessin, `rendu.dessin_icone`, sert à la PWA (`icon-180/512.png`,
+régénérées par `update`) et à l'app iOS (`.venv/bin/python tools/icone.py` réécrit l'`AppIcon` 1024 px).
+
 Captures en émulation iPhone (Chrome DevTools, 393×852 @3x) : `.venv/bin/python tools/shot_iphone.py "index.html" "index.html?spot=graviere"` → `captures/`.
 Pour le vrai simulateur iOS il faut Xcode **et** son runtime iOS (~8 Go) : `xcodebuild -downloadPlatform iOS`.
 

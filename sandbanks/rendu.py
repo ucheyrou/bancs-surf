@@ -1,13 +1,14 @@
 """Sorties : GeoTIFF (UTM), PNG géoréférencés WGS84 pour la carte web, crops par spot, viewer HTML."""
 from __future__ import annotations
 import json
+import math
 from pathlib import Path
 import numpy as np
 import rasterio
 from rasterio.transform import Affine, rowcol
 from rasterio.warp import calculate_default_transform, reproject, Resampling
 from pyproj import Transformer
-from PIL import Image
+from PIL import Image, ImageDraw
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -507,28 +508,74 @@ drawPrev(); redraws.push(drawPrev);
 
 
 def _pwa_fichiers(dossier: Path):
-    """manifest.json + icône (vague stylisée) pour l'installation sur l'écran d'accueil iOS."""
+    """manifest.json + icône (vague qui tube) pour l'installation sur l'écran d'accueil iOS."""
     (dossier / "manifest.json").write_text(json.dumps({
         "name": "Bancs de sable — Landes", "short_name": "Bancs", "start_url": "./index.html",
         "display": "standalone", "background_color": "#0b1020", "theme_color": "#0b1020",
         "icons": [{"src": "icon-180.png", "sizes": "180x180", "type": "image/png"},
                   {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"}]}, ensure_ascii=False))
-    from PIL import ImageDraw
     for taille in (180, 512):
-        im = Image.new("RGB", (taille, taille), "#0b1020")
-        d = ImageDraw.Draw(im)
-        s_ = taille / 180
-        # sable
-        d.rectangle([0, 128 * s_, taille, taille], fill="#e8c77a")
-        # mer + trois crêtes de vague
-        d.rectangle([0, 0, taille, 128 * s_], fill="#12345a")
-        for k, (y, col) in enumerate([(70, "#1f6fb2"), (95, "#3c95d9"), (118, "#8ec9f5")]):
-            pts = []
-            for xx in range(0, taille + 1, max(1, int(3 * s_))):
-                import math
-                pts.append((xx, y * s_ + 9 * s_ * math.sin(xx / (22 * s_) + k)))
-            pts += [(taille, 128 * s_), (0, 128 * s_)]
-            d.polygon(pts, fill=col)
-        # écume
-        d.ellipse([60 * s_, 88 * s_, 120 * s_, 112 * s_], fill="#ffffff")
-        im.save(dossier / f"icon-{taille}.png")
+        dessin_icone(taille).save(dossier / f"icon-{taille}.png")
+
+
+def _bezier(p0, p1, p2, p3, n: int = 80) -> list[tuple[float, float]]:
+    t = np.linspace(0, 1, n)[:, None]
+    p = ((1 - t) ** 3 * np.array(p0) + 3 * (1 - t) ** 2 * t * np.array(p1)
+         + 3 * (1 - t) * t ** 2 * np.array(p2) + t ** 3 * np.array(p3))
+    return [tuple(q) for q in p]
+
+
+def dessin_icone(taille: int) -> Image.Image:
+    """Vague qui tube, de profil : la lèvre s'enroule en spirale et retombe sur le plat, le tube reste ouvert."""
+    ss = 4                                   # suréchantillonnage pour lisser les bords
+    T = taille * ss
+    u = T / 1024                             # dessin exprimé sur une grille 1024
+    im = Image.new("RGB", (T, T), "#0b1020")
+    d = ImageDraw.Draw(im)
+
+    cx, cy = 470 * u, 575 * u                # centre du tube
+    r90 = 360 * u                            # rayon à la crête (φ = 90°)
+    b = math.log(1 / 0.22) / 360             # spirale log : rayon × 0,22 par tour
+
+    def spirale(phi_deg, fac=1.0):
+        phi_deg = np.asarray(phi_deg, dtype=float)
+        r = r90 * np.exp(-b * (phi_deg - 90)) * fac
+        phi = np.radians(phi_deg)
+        return [tuple(q) for q in np.column_stack([cx + 1.15 * r * np.cos(phi), cy - r * np.sin(phi)])]
+
+    niveau = 745 * u                         # plan d'eau devant la vague
+    phi_l = np.linspace(90, 280, 220)        # lèvre : de la crête jusqu'à l'impact
+    ep = np.interp(phi_l, [90, 200, 280], [0.40, 0.36, 0.26])
+    ext = spirale(phi_l)
+    inte = spirale(phi_l, 1 - ep)
+    crete = ext[0]
+
+    # masse d'eau : dos de la vague → crête → lèvre → plat devant → fond
+    dos = _bezier((T, 690 * u), (850 * u, 640 * u), (680 * u, 200 * u), crete)
+    ix, iy = ext[-1]                         # point d'impact de la lèvre
+    masse = dos + ext + [(ix, niveau), (0, niveau), (0, T), (T, T)]
+    d.polygon(masse, fill="#1f6fb2")
+    # mousse sur le plat devant la vague
+    d.polygon(_bezier((ix, niveau - 12 * u), (ix - 150 * u, niveau - 4 * u), (ix - 300 * u, niveau), (0, niveau))
+              + _bezier((0, niveau + 16 * u), (ix - 300 * u, niveau + 16 * u), (ix - 100 * u, niveau + 14 * u), (ix, niveau + 4 * u)),
+              fill="#8ec9f5")
+
+    # tube : sous la lèvre, fermé par la face creuse de la vague
+    creux = inte[:int(len(inte) * 0.9)]      # s'arrête avant la pointe pour un fond de tube lisse
+    x0, y0 = creux[0]
+    x1, y1 = creux[-1]
+    face = _bezier(creux[-1], (x1 + 190 * u, y1 + 12 * u), (x0 + 200 * u, y0), creux[0])
+    d.polygon(creux + face, fill="#0d2748")
+
+    # lèvre plus claire, qui naît en biseau sur la crête
+    ep_c = np.interp(phi_l, [90, 210, 262, 280], [0.0, 0.26, 0.24, 0.0])
+    d.polygon(ext + spirale(phi_l[::-1], 1 - ep_c[::-1]), fill="#3c95d9")
+
+    # écume : liseré sur la crête
+    phi_e = np.linspace(95, 280, 200)
+    ep_e = np.interp(phi_e, [95, 140, 230, 280], [0.0, 0.06, 0.05, 0.0])
+    d.polygon(spirale(phi_e) + spirale(phi_e[::-1], 1 - ep_e[::-1]), fill="#ffffff")
+
+    # sable
+    d.rectangle([0, 900 * u, T, T], fill="#e8c77a")
+    return im.resize((taille, taille), Image.LANCZOS)
